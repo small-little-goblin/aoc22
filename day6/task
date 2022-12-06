@@ -1,0 +1,33 @@
+#include <iostream>
+#include <fstream>
+#include <stdlib.h>
+#include <sstream>
+
+#define SW_LENGTH 14
+
+bool checkMessageStart(char (&sw)[SW_LENGTH]){
+    for(int i = 0; i < SW_LENGTH-1; i++){   
+        for (int j = i+1; j < SW_LENGTH; j++){
+            if( sw[i] == sw[j]) return false;
+        }
+    }
+    return true;
+}
+
+int main() {
+    std::ifstream file("testinput");
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    char slidingWindow[SW_LENGTH];
+    int pos = SW_LENGTH;
+    //does c++ have slices? modern probably has..
+    for (; pos < buffer.str().length() ; pos++) {
+        for (int i = 0; i < SW_LENGTH; i++){
+            slidingWindow[i] = buffer.str()[pos - i];
+        }
+        if( checkMessageStart(slidingWindow)) break;
+        std::cout << std::endl;
+    }
+    std::cout << pos + 1;
+    return 0;
+}
