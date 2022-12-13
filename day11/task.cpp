@@ -1,122 +1,91 @@
-// ugliest one so far :)
 #include <fstream>
 #include <iostream>
+#include <queue>
 #include <vector>
-#include <cmath>
-#include <numeric>
 
-class  Monkey{
-    public:
-        std::vector<long> items;
-        long totalInspections;
-        std::string operation;
-        long testDivision;
-        long targetIfTrue;
-        long targetIfFalse;
-
-        Monkey(){
-            totalInspections = 0;
-        };
-        ~Monkey(){};
+struct Cell{
+    int x, y, distance;
 };
 
-int main(){
-    long realInput;
-    std::cin >> realInput;
-    std::string fileName = realInput == 1 ? "input" : "testinput";
-    std::ifstream file(fileName);
-    std::string line;
-
-    std::vector<Monkey *> monkeys;
-
-    //fill Monkeys
-    while(std::getline(file, line)){
-        Monkey *monkeyD = new Monkey();
-        monkeys.push_back(monkeyD);
-        //get items
-        std::getline(file, line);
-        size_t start = 18;
-        size_t end = 0;
-        while((end = line.find(',', start)) != std::string::npos){
-            monkeys.back()->items.push_back(stoi(line.substr(start, end - start)));
-            start = end + 1;
-        } 
-        monkeys.back()->items.push_back(stoi(line.substr(start, start - end))); 
-       //get operation
-        getline(file, line);
-        monkeys.back()->operation = line.substr(23);
-        //get parameter for throwing the items
-        getline(file, line);
-        monkeys.back()->testDivision = stoi(line.substr(21));
-
-        getline(file, line);
-        monkeys.back()->targetIfTrue = stoi(line.substr(29));
-        
-        getline(file, line);
-        monkeys.back()->targetIfFalse = stoi(line.substr(30));
-        
-        getline(file, line); 
-    }
-
-    //rounds
-
-    //triple for loop lol q:^)
-    int Modulo = 1;
-    
-    for (auto m : monkeys){
-        Modulo *= m->testDivision;
-    }
-    for (long r = 0; r < 10000; r++){
-        for(auto m : monkeys){
-            for (auto i : m->items){
-                char op = m->operation[0];
-                long increase;
-                if(m->operation.substr(2) == "old"){
-                    increase = i;
-                }
-                else {
-                    increase = stoi(m->operation.substr(2));
-                }
-                if(op == '+'){
-                    i += increase;
-                    i %= Modulo;
-                }
-                else if (op == '*'){
-                    i *= increase;
-                    i %= Modulo;
-                }
-                if((i % m->testDivision) == 0){
-                    monkeys[m->targetIfTrue]->items.push_back(i);
-                } else {
-                    monkeys[m->targetIfFalse]->items.push_back(i);
-                }
-                m->totalInspections++;
-            }
-            m->items.clear();
+void BFS(std::vector<std::vector<char>> g, Cell startV, std::vector<std::vector<bool>> vis){
+    std::queue<Cell> q;
+    q.push(startV);
+    vis[startV.x][startV.y] = true;
+    while(!q.empty()){
+        Cell v = q.front();
+        q.pop();
+        if(g[v.x][v.y] == 'a'){
+            v.distance = 0;
         }
-        if (r == 19){
-            for(auto m : monkeys){
-                std::cout << m->totalInspections << " ";
-            }
+        if(g[v.x][v.y] == 'z' + 1){
+            std::cout << v.distance;
+            return;
         }
-    }
-
-
-    long monkeyBusiness[2] = {0, 0};
-
-    for (auto m : monkeys){
-        if (m->totalInspections > monkeyBusiness[0])
-            monkeyBusiness[0] = m->totalInspections;
-        if(monkeyBusiness[0] > monkeyBusiness[1]){
-            long tmp = monkeyBusiness[1];
-            monkeyBusiness[1] = monkeyBusiness[0];
-            monkeyBusiness[0] = tmp;
+        if(v.x - 1 >= 0 && !vis[v.x-1][v.y] &&
+           g[v.x-1][v.y] - g[v.x][v.y] <= 1){
+            q.push(Cell{v.x-1, v.y, v.distance+1});     
+            vis[v.x-1][v.y] = 1;
+        }   
+        if(v.x + 1 < g.size() && !vis[v.x+1][v.y] &&
+           g[v.x+1][v.y] - g[v.x][v.y] <= 1){
+            q.push(Cell{v.x+1, v.y, v.distance+1});
+            vis[v.x+1][v.y] = 1;
         }
+        if(v.y - 1 >= 0 && !vis[v.x][v.y-1] &&
+           g[v.x][v.y-1] - g[v.x][v.y] <= 1){
+            q.push(Cell{v.x, v.y-1, v.distance+1});
+            vis[v.x][v.y-1] = 1;
+        }
+        if(v.y + 1 < g[0].size() && !vis[v.x][v.y+1] &&
+           g[v.x][v.y+1] - g[v.x][v.y] <= 1){
+            q.push(Cell{v.x, v.y+1, v.distance+1});
+            vis[v.x][v.y+1] = 1;
+        }
+            for(auto r : vis){
+                for(auto c : r){
+                    std::cout << c;
+                } std::cout << "\n";
+            }std::cout << "\n"; 
     }
-
-    for(auto m : monkeys){
-        std::cout << m->totalInspections << "\n";
-    }
-
-    std::cout << "Monkey Business: " << monkeyBusiness[0] * monkeyBusiness[1];
+    return;
 }
+
+int main(){
+    std::ifstream file("input");
+    std::string line;
+    std::vector<std::vector<char>> grid;
+
+    while(std::getline(file, line)){
+        std::vector<char> row;
+        for(int c = 0; c < line.length(); c++){
+            row.push_back(line[c]);
+        }
+        grid.push_back(row);
+    }    
+    std::vector<std::vector<bool>> visited;
+    for(int r = 0; r < grid.size(); r++){
+        std::vector<bool> row;
+        for(int c = 0; c < grid[0].size(); c++){
+            row.push_back(0);
+        }
+        visited.push_back(row);
+    }
+    Cell startNode;
+    for(int r = 0; r < grid.size(); r++){
+        for(int c = 0; c < grid[0].size(); c++){
+            if ( grid[r][c] == 'S'){
+                grid[r][c] = 'a' - 1;
+                startNode = {r, c, 0};
+            }
+            if ( grid[r][c] == 'E'){
+                grid[r][c] = 'z' + 1;
+            }
+        }
+    }
+    for(auto r : grid){
+        for(auto c : r){
+            std::cout << c;
+        } std::cout << "\n";
+    }
+    BFS(grid, startNode, visited);
+} 
